@@ -7,10 +7,25 @@
     <style>
         #user-info {
             text-align: center;
-            margin-top: 50px;
+            margin-top: 20px;
         }
         #user-image {
             border-radius: 50%;
+            width: 100px;
+            height: 100px;
+        }
+        #login-btn {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #login-btn:hover {
+            background-color: #45a049;
         }
     </style>
 </head>
@@ -24,11 +39,12 @@
 <!-- This div will hold the user information after successful login -->
 <div id="user-info" style="display:none;">
     <h1 id="username"></h1>
-    <img id="user-image" src="" alt="User Image" width="100" height="100">
+    <img id="user-image" src="" alt="User Image">
 </div>
 
 <script>
     const clientId = "6325271009758156790";
+    const clientSecret = "RBX-p83OHqrsO0mfkJuMEEcHOrksrKTv-n88W4iIPNl4UCOMMFrtl9A6CWoAFnn15prM";
     const redirectUri = "https://joeyd.org/index.html";
 
     // Step 1: Redirect user to Roblox login page
@@ -43,7 +59,6 @@
 
     if (code) {
         // Step 3: Exchange the authorization code for an access token
-        const clientSecret = "RBX-p83OHqrsO0mfkJuMEEcHOrksrKTv-n88W4iIPNl4UCOMMFrtl9A6CWoAFnn15prM"; // Replace with your actual client secret
         fetchAccessToken(code, clientSecret);
     }
 
@@ -85,7 +100,7 @@
 
         const userData = await response.json();
         
-        // Step 7: Display the user's username and profile image
+        // Step 7: Display the user's username and profile image at the top of the screen
         const username = userData.name;
         const imageUrl = `https://www.roblox.com/headshot-thumbnail/image?userId=${userData.id}&width=100&height=100`;
 

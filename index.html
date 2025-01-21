@@ -49,7 +49,7 @@
           client_id: clientId,
           redirect_uri: redirectUri,
           response_type: "code",
-          scope: "read write", // Add your desired scopes
+          scope: "profile.read", // Add your desired scopes
           code_challenge: codeChallenge,
           code_challenge_method: "S256"
         }).toString();

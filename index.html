@@ -3,113 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roblox OAuth Example</title>
+    <title>Roblox Login</title>
     <style>
-        #user-info {
-            text-align: center;
-            margin-top: 20px;
+        body {
+            font-family: Arial, sans-serif;
         }
-        #user-image {
-            border-radius: 50%;
-            width: 100px;
-            height: 100px;
+        #user-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: none;
         }
         #login-btn {
-            display: block;
-            margin: 20px auto;
+            margin-top: 20px;
             padding: 10px 20px;
-            background-color: #4CAF50;
+            background-color: #1D8E6F;
             color: white;
             border: none;
-            border-radius: 5px;
             cursor: pointer;
-        }
-        #login-btn:hover {
-            background-color: #45a049;
         }
     </style>
 </head>
 <body>
+    <h1>Welcome to the Roblox OAuth App</h1>
+    <button id="login-btn">Login with Roblox</button>
+    <div id="user-info">
+        <img id="avatar" width="50" height="50" alt="User Avatar" />
+        <span id="username"></span>
+    </div>
 
-<h2 style="text-align:center;">Login with Roblox</h2>
+    <script>
+        const clientId = '6325271009758156790';
+        const redirectUri = 'https://joeyd.org/index.html'; // Make sure this matches the redirect URL in Roblox OAuth settings
+        const secret = 'RBX-p83OHqrsO0mfkJuMEEcHOrksrKTv-n88W4iIPNl4UCOMMFrtl9A6CWoAFnn15prM'; // You can keep it secret on the server-side
 
-<!-- This button will initiate the OAuth login process -->
-<button id="login-btn" onclick="loginWithRoblox()">Login with Roblox</button>
+        const loginBtn = document.getElementById('login-btn');
+        const userInfoDiv = document.getElementById('user-info');
+        const avatarImage = document.getElementById('avatar');
+        const usernameSpan = document.getElementById('username');
 
-<!-- This div will hold the user information after successful login -->
-<div id="user-info" style="display:none;">
-    <h1 id="username"></h1>
-    <img id="user-image" src="" alt="User Image">
-</div>
-
-<script>
-    const clientId = "6325271009758156790";
-    const clientSecret = "RBX-p83OHqrsO0mfkJuMEEcHOrksrKTv-n88W4iIPNl4UCOMMFrtl9A6CWoAFnn15prM";
-    const redirectUri = "https://joeyd.org/index.html";
-
-    // Step 1: Redirect user to Roblox login page
-    function loginWithRoblox() {
-        const authUrl = `https://www.roblox.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=openid%20profile`;
-        window.location.href = authUrl;
-    }
-
-    // Step 2: Check if there's an authorization code in the URL after redirection
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-
-    if (code) {
-        // Step 3: Exchange the authorization code for an access token
-        fetchAccessToken(code, clientSecret);
-    }
-
-    // Step 4: Function to exchange the authorization code for an access token
-    async function fetchAccessToken(code, clientSecret) {
-        const tokenUrl = "https://apis.roblox.com/oauth2/token";
-        const params = new URLSearchParams({
-            client_id: clientId,
-            client_secret: clientSecret,
-            code: code,
-            redirect_uri: redirectUri,
-            grant_type: "authorization_code"
+        // Handle the login button click
+        loginBtn.addEventListener('click', () => {
+            window.location.href = `https://roblox.com/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&scope=identity`;
         });
 
-        const response = await fetch(tokenUrl, {
-            method: 'POST',
-            body: params
-        });
+        // Check if we have a 'code' in the URL (this indicates the user was redirected back after authentication)
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
 
-        const data = await response.json();
-        const accessToken = data.access_token;
-
-        if (accessToken) {
-            // Step 5: Fetch user data using the access token
-            fetchUserData(accessToken);
-        } else {
-            alert("Failed to get access token.");
+        if (code) {
+            // Send the code to your server to exchange it for an access token and get user data
+            fetch(`https://your-server-endpoint-to-exchange-token?code=${code}`)
+                .then(response => response.json())
+                .then(data => {
+                    const user = data.user;
+                    if (user) {
+                        // Display the user's info on the screen
+                        avatarImage.src = user.avatarUrl; // Ensure your server provides the URL of the user's avatar
+                        usernameSpan.textContent = user.username;
+                        userInfoDiv.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching user info:', error);
+                });
         }
-    }
-
-    // Step 6: Fetch the user's profile data
-    async function fetchUserData(accessToken) {
-        const userUrl = "https://apis.roblox.com/users/v1/users/authenticated";
-        const response = await fetch(userUrl, {
-            headers: {
-                "Authorization": `Bearer ${accessToken}`
-            }
-        });
-
-        const userData = await response.json();
-        
-        // Step 7: Display the user's username and profile image at the top of the screen
-        const username = userData.name;
-        const imageUrl = `https://www.roblox.com/headshot-thumbnail/image?userId=${userData.id}&width=100&height=100`;
-
-        document.getElementById("username").innerText = username;
-        document.getElementById("user-image").src = imageUrl;
-        document.getElementById("user-info").style.display = "block";
-        document.getElementById("login-btn").style.display = "none"; // Hide the login button after successful login
-    }
-</script>
-
+    </script>
 </body>
 </html>

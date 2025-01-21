@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roblox OAuth Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        .login-btn {
+            margin: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        .user-info {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .user-info img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to the Roblox OAuth App</h1>
+    <button class="login-btn" onclick="redirectToRobloxAuth()">Login with Roblox</button>
+
+    <div class="user-info" id="user-info" style="display: none;">
+        <img id="user-avatar" alt="Avatar">
+        <span id="username"></span>
+    </div>
+
+    <script>
+        const clientId = "6325271009758156790"; // Replace with your Roblox OAuth client ID
+        const redirectUri = "https://joeyd.org/index.html"; // Replace with your redirect URI
+
+        function redirectToRobloxAuth() {
+            const robloxAuthUrl = `https://www.roblox.com/oauth/authorize?response_type=token&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+            window.location.href = robloxAuthUrl;
+        }
+
+        function getAccessTokenFromUrl() {
+            const hash = window.location.hash.substring(1);
+            const params = new URLSearchParams(hash);
+            return params.get('access_token');
+        }
+
+        async function fetchUserData(token) {
+            try {
+                const response = await fetch('https://apis.roblox.com/users/v1/me', {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user data');
+                }
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error(error);
+                return null;
+            }
+        }
+
+        async function handleRedirect() {
+            const token = getAccessTokenFromUrl();
+            if (token) {
+                const userData = await fetchUserData(token);
+                if (userData) {
+                    document.getElementById('user-info').style.display = 'flex';
+                    document.getElementById('username').textContent = userData.name;
+                    document.getElementById('user-avatar').src = userData.avatarUrl;
+                }
+            }
+        }
+
+        // Handle redirect and display user info
+        window.onload = handleRedirect;
+    </script>
+</body>
+</html>

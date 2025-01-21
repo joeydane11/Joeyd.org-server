@@ -1,164 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Roblox OAuth 2.0 Example</title>
-  <style>
-    #user-info {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    #user-avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      border: 2px solid #ccc;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roblox OAuth Example</title>
+    <style>
+        #user-info {
+            text-align: center;
+            margin-top: 50px;
+        }
+        #user-image {
+            border-radius: 50%;
+        }
+    </style>
 </head>
 <body>
-  <h1>Roblox OAuth 2.0 Example</h1>
-  <button id="login-button">Login with Roblox</button>
-  <div id="output"></div>
 
-  <div id="user-info" style="display: none;">
-    <img id="user-avatar" src="" alt="User Avatar">
-    <span id="username"></span>
-  </div>
+<h2 style="text-align:center;">Login with Roblox</h2>
 
-  <script>
-    const CLIENT_ID = "6325271009758156790";
-    const REDIRECT_URI = "https://joeyd.org/index.html"; // Ensure this matches what you registered in the Roblox Developer Portal
-    const AUTH_ENDPOINT = "https://apis.roblox.com/oauth/v1/authorize";
-    const TOKEN_ENDPOINT = "https://apis.roblox.com/oauth/v1/token";
-    const PROFILE_ENDPOINT = "https://apis.roblox.com/users/v1/users/current";
+<!-- This button will initiate the OAuth login process -->
+<button id="login-btn" onclick="loginWithRoblox()">Login with Roblox</button>
 
-    // Generate a random state and store it for validation
-    const state = Math.random().toString(36).substring(2);
-    sessionStorage.setItem("oauth_state", state); // Store state in sessionStorage
-    console.log("Generated state:", state); // Add this to debug
+<!-- This div will hold the user information after successful login -->
+<div id="user-info" style="display:none;">
+    <h1 id="username"></h1>
+    <img id="user-image" src="" alt="User Image" width="100" height="100">
+</div>
 
-    // Generate a random code verifier
-    function generateCodeVerifier() {
-      const array = new Uint8Array(32);
-      window.crypto.getRandomValues(array);
-      return btoa(String.fromCharCode(...array))
-        .replace(/\+/g, "-")
-        .replace(/\//g, "_")
-        .replace(/=/g, "");
-    }
-    const codeVerifier = generateCodeVerifier();
-    sessionStorage.setItem("code_verifier", codeVerifier);
+<script>
+    const clientId = "6325271009758156790";
+    const redirectUri = "https://joeyd.org/index.html";
 
-    // Generate the code challenge
-    async function generateCodeChallenge(codeVerifier) {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(codeVerifier);
-      const digest = await window.crypto.subtle.digest("SHA-256", data);
-      return btoa(String.fromCharCode(...new Uint8Array(digest)))
-        .replace(/\+/g, "-")
-        .replace(/\//g, "_")
-        .replace(/=/g, "");
+    // Step 1: Redirect user to Roblox login page
+    function loginWithRoblox() {
+        const authUrl = `https://www.roblox.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=openid%20profile`;
+        window.location.href = authUrl;
     }
 
-    document.getElementById("login-button").addEventListener("click", async () => {
-      const codeChallenge = await generateCodeChallenge(codeVerifier);
+    // Step 2: Check if there's an authorization code in the URL after redirection
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
 
-      // Construct the authorization URL
-      const authUrl = `${AUTH_ENDPOINT}?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(
-        REDIRECT_URI
-      )}&scope=openid profile&state=${state}&code_challenge=${codeChallenge}&code_challenge_method=S256`;
+    if (code) {
+        // Step 3: Exchange the authorization code for an access token
+        const clientSecret = "RBX-p83OHqrsO0mfkJuMEEcHOrksrKTv-n88W4iIPNl4UCOMMFrtl9A6CWoAFnn15prM"; // Replace with your actual client secret
+        fetchAccessToken(code, clientSecret);
+    }
 
-      // Redirect the user to the authorization endpoint
-      window.location.href = authUrl;
-    });
-
-    // Handle the redirect with the authorization code
-    async function handleRedirect() {
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get("code");
-      const returnedState = params.get("state");
-
-      // Debugging logs
-      console.log("Redirect URL:", window.location.href);
-      console.log("Returned state:", returnedState);
-      console.log("Stored state:", sessionStorage.getItem("oauth_state"));
-
-      // Check if the code and state are present
-      if (!code) {
-        console.error("No authorization code found in the URL.");
-        document.getElementById("output").innerText = "Error: No authorization code found.";
-        return;
-      }
-      if (returnedState !== sessionStorage.getItem("oauth_state")) {
-        console.error("State mismatch. Possible security issue.");
-        document.getElementById("output").innerText = "Error: State mismatch.";
-        return;
-      }
-
-      console.log("Authorization code received:", code);
-
-      // Exchange the authorization code for an access token
-      try {
-        const response = await fetch(TOKEN_ENDPOINT, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: new URLSearchParams({
-            client_id: CLIENT_ID,
-            redirect_uri: REDIRECT_URI,
-            grant_type: "authorization_code",
+    // Step 4: Function to exchange the authorization code for an access token
+    async function fetchAccessToken(code, clientSecret) {
+        const tokenUrl = "https://apis.roblox.com/oauth2/token";
+        const params = new URLSearchParams({
+            client_id: clientId,
+            client_secret: clientSecret,
             code: code,
-            code_verifier: sessionStorage.getItem("code_verifier"),
-          }),
+            redirect_uri: redirectUri,
+            grant_type: "authorization_code"
         });
 
-        const result = await response.json();
-
-        // Debugging token exchange
-        console.log("Token exchange response:", result);
-
-        if (!result.access_token) {
-          console.error("Failed to retrieve access token:", result);
-          document.getElementById("output").innerText = "Error: Failed to retrieve access token.";
-          return;
-        }
-
-        // Fetch the user's profile
-        const profileResponse = await fetch(PROFILE_ENDPOINT, {
-          headers: {
-            Authorization: `Bearer ${result.access_token}`,
-          },
+        const response = await fetch(tokenUrl, {
+            method: 'POST',
+            body: params
         });
 
-        const profile = await profileResponse.json();
+        const data = await response.json();
+        const accessToken = data.access_token;
 
-        // Debugging profile fetching
-        console.log("User profile response:", profile);
-
-        // Display the user's username and avatar
-        if (profile.displayName && profile.avatarUrl) {
-          document.getElementById("user-info").style.display = "flex";
-          document.getElementById("username").innerText = profile.displayName;
-          document.getElementById("user-avatar").src = profile.avatarUrl;
+        if (accessToken) {
+            // Step 5: Fetch user data using the access token
+            fetchUserData(accessToken);
         } else {
-          console.error("Failed to fetch user profile:", profile);
-          document.getElementById("output").innerText = "Error: Failed to fetch user profile.";
+            alert("Failed to get access token.");
         }
-      } catch (error) {
-        console.error("Error during token exchange or profile fetch:", error);
-        document.getElementById("output").innerText = "Error: An unexpected error occurred.";
-      }
     }
 
-    // Call the function to handle the redirect if code is present in the URL
-    handleRedirect();
-  </script>
+    // Step 6: Fetch the user's profile data
+    async function fetchUserData(accessToken) {
+        const userUrl = "https://apis.roblox.com/users/v1/users/authenticated";
+        const response = await fetch(userUrl, {
+            headers: {
+                "Authorization": `Bearer ${accessToken}`
+            }
+        });
+
+        const userData = await response.json();
+        
+        // Step 7: Display the user's username and profile image
+        const username = userData.name;
+        const imageUrl = `https://www.roblox.com/headshot-thumbnail/image?userId=${userData.id}&width=100&height=100`;
+
+        document.getElementById("username").innerText = username;
+        document.getElementById("user-image").src = imageUrl;
+        document.getElementById("user-info").style.display = "block";
+        document.getElementById("login-btn").style.display = "none"; // Hide the login button after successful login
+    }
+</script>
+
 </body>
 </html>

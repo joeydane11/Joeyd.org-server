@@ -1,77 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roblox OAuth Login</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f0f0;
-        }
-        .login-button {
-            display: inline-flex;
-            align-items: center;
-            padding: 10px 20px;
-            background-color: #fff;
-            color: #000;
-            text-decoration: none;
-            border: 2px solid #000;
-            border-radius: 5px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            position: relative;
-            cursor: pointer;
-        }
-        .login-button:hover {
-            background-color: #00A2FF;
-            color: #fff;
-            border-color: #00A2FF;
-        }
-        .login-button::after {
-            content: attr(data-redirect);
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #333;
-            color: #fff;
-            padding: 5px 10px;
-            border-radius: 3px;
-            font-size: 14px;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            white-space: nowrap;
-            pointer-events: none;
-        }
-        .login-button:hover::after {
-            opacity: 1;
-        }
-        .icon {
-            margin-right: 10px;
-            font-size: 24px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roblox OAuth Integration</title>
 </head>
 <body>
-    <button id="loginButton" class="login-button" data-redirect="You will be redirected to Roblox.com">
-        <span class="icon">➜</span>
-        Login with Roblox
-    </button>
+  <h1>Welcome to JoeyD.org</h1>
+  <button id="loginButton">Login with Roblox</button>
 
-    <script>
-        const clientId = '2735003774133898988'; // Replace with your Roblox OAuth app client ID
-        const redirectUri = 'http://joeyd.org/dashb.html'; // Replace with your redirect URI
+  <script>
+    const CLIENT_ID = "6325271009758156790";
+    const REDIRECT_URI = "http://joeyd.org/dashb.html";
 
-        document.getElementById('loginButton').addEventListener('click', function() {
-            const authUrl = `https://authorize.roblox.com/v1/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=openid%20profile`;
-            window.location.href = authUrl;
-        });
-    </script>
+    document.getElementById("loginButton").addEventListener("click", () => {
+      const oauthUrl = `https://apis.roblox.com/oauth/v1/authorize?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=openid%20profile`;
+      window.location.href = oauthUrl;
+    });
+  </script>
 </body>
 </html>

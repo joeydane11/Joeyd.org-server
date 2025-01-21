@@ -3,34 +3,70 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Roblox OAuth Integration</title>
+  <title>OAuth 2.0 with PKCE</title>
 </head>
 <body>
-  <h1>Log in with Roblox</h1>
-  <a href="https://apis.roblox.com/oauth/v1/authorize?response_type=code&client_id=6325271009758156790&redirect_uri=https://joeyd.org/dashb.html&scope=openid">
-    <button>Log in with Roblox</button>
-  </a>
+  <h1>OAuth 2.0 with PKCE Demo</h1>
+  <button id="login-button">Log in with Roblox</button>
+  <div id="result"></div>
 
-  <!-- Add this script to handle redirect response -->
   <script>
+    // Configurations
+    const clientId = "6325271009758156790";
+    const redirectUri = "http://joeyd.org/dashb.html"; // Update this to your redirect URI
+    const authorizationEndpoint = "https://apis.roblox.com/oauth2/authorize";
+
+    // Step 1: Generate Code Verifier and Code Challenge
+    function generateCodeVerifier() {
+      const array = new Uint8Array(64);
+      window.crypto.getRandomValues(array);
+      return btoa(String.fromCharCode.apply(null, array))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/, "");
+    }
+
+    async function generateCodeChallenge(verifier) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(verifier);
+      const digest = await window.crypto.subtle.digest("SHA-256", data);
+      return btoa(String.fromCharCode(...new Uint8Array(digest)))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/, "");
+    }
+
+    // Step 2: Redirect User to Authorization URL
+    document.getElementById("login-button").addEventListener("click", async () => {
+      const codeVerifier = generateCodeVerifier();
+      const codeChallenge = await generateCodeChallenge(codeVerifier);
+
+      // Save the code verifier in sessionStorage (you'll need it later)
+      sessionStorage.setItem("code_verifier", codeVerifier);
+
+      const authUrl = `${authorizationEndpoint}?` + 
+        new URLSearchParams({
+          client_id: clientId,
+          redirect_uri: redirectUri,
+          response_type: "code",
+          scope: "read write", // Add your desired scopes
+          code_challenge: codeChallenge,
+          code_challenge_method: "S256"
+        }).toString();
+
+      window.location.href = authUrl; // Redirect the user
+    });
+
+    // Step 3: Handle Callback and Extract Authorization Code
     const urlParams = new URLSearchParams(window.location.search);
-    const authCode = urlParams.get('code');
+    const authCode = urlParams.get("code");
 
     if (authCode) {
-      console.log("Authorization Code:", authCode);
+      document.getElementById("result").innerText = `Authorization Code: ${authCode}`;
 
-      // Send the authorization code to your backend for token exchange
-      fetch('YOUR_BACKEND_ENDPOINT', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: authCode })
-      })
-        .then(response => response.json())
-        .then(data => {
-          console.log("Token Response:", data);
-          // Handle the token (e.g., save it to local storage or start user session)
-        })
-        .catch(error => console.error("Error:", error));
+      // Step 4: Exchange Code for Tokens (this should happen on the server for security)
+      // Here, you can send the code to your backend server along with the code_verifier
+      // for token exchange.
     }
   </script>
 </body>

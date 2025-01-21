@@ -3,125 +3,64 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Roblox Dashboard</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-    }
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 20px;
-      background-color: #232323;
-      color: #fff;
-    }
-    .user-info {
-      display: flex;
-      align-items: center;
-    }
-    .user-info img {
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      margin-right: 10px;
-    }
-    .main-content {
-      padding: 20px;
-    }
-  </style>
+  <title>Dashboard</title>
 </head>
 <body>
-  <header>
-    <h1>Roblox Dashboard</h1>
-    <div class="user-info" id="user-info">
-      <!-- User data will be dynamically inserted here -->
-    </div>
-  </header>
-  <div class="main-content">
-    <p>Welcome to your dashboard!</p>
-    <!-- Add more content here -->
+  <div id="userInfo">
+    <p>Loading user data...</p>
   </div>
 
   <script>
-    // Roblox API Endpoints
-    const userInfoEndpoint = "https://apis.roblox.com/users/v1/users/authenticated";
+    const CLIENT_ID = "6325271009758156790";
+    const REDIRECT_URI = "http://joeyd.org/dashb.html";
 
-    // Get the Authorization Code from the URL
+    // Extract the authorization code from the URL
     const urlParams = new URLSearchParams(window.location.search);
-    const authCode = urlParams.get("code");
+    const authorizationCode = urlParams.get("code");
 
-    // Step 1: Exchange Authorization Code for Tokens (you need your server for this step)
-    async function exchangeCodeForTokens(authCode) {
-      const response = await fetch("http://joeyd.org/dashb.html", {
+    if (authorizationCode) {
+      // Exchange the authorization code for an access token
+      fetch("https://apis.roblox.com/oauth/v1/token", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: JSON.stringify({
-          code: authCode,
-          redirect_uri: "http://joeyd.org/dashb.html", // Update to your actual redirect URI
+        body: new URLSearchParams({
+          grant_type: "authorization_code",
+          code: authorizationCode,
+          redirect_uri: REDIRECT_URI,
+          client_id: CLIENT_ID,
+          client_secret: "YOUR_CLIENT_SECRET", // Replace with your client secret
         }),
-      });
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          const accessToken = data.access_token;
 
-      if (!response.ok) {
-        console.error("Failed to exchange code for tokens.");
-        return null;
-      }
-
-      return await response.json(); // { access_token, refresh_token }
+          // Fetch user info using the access token
+          return fetch("https://apis.roblox.com/oauth/v1/userinfo", {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          });
+        })
+        .then((response) => response.json())
+        .then((userInfo) => {
+          // Display the user's username and avatar
+          document.getElementById("userInfo").innerHTML = `
+            <div style="position: fixed; top: 10px; right: 10px;">
+              <img src="https://www.roblox.com/headshot-thumbnail/image?userId=${userInfo.sub}&width=100&height=100&format=png" alt="Avatar">
+              <p>${userInfo.username}</p>
+            </div>
+          `;
+        })
+        .catch((error) => {
+          console.error("Error fetching user data:", error);
+          document.getElementById("userInfo").textContent = "Failed to load user data.";
+        });
+    } else {
+      document.getElementById("userInfo").textContent = "No authorization code found.";
     }
-
-    // Step 2: Fetch User Data from Roblox API
-    async function fetchUserInfo(accessToken) {
-      const response = await fetch(userInfoEndpoint, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      if (!response.ok) {
-        console.error("Failed to fetch user info.");
-        return null;
-      }
-
-      return await response.json(); // { id, name, avatarUrl }
-    }
-
-    // Step 3: Display User Data
-    async function displayUserInfo() {
-      if (!authCode) {
-        document.getElementById("user-info").innerText = "Error: No auth code provided!";
-        return;
-      }
-
-      // Exchange authorization code for tokens
-      const tokens = await exchangeCodeForTokens(authCode);
-      if (!tokens || !tokens.access_token) {
-        document.getElementById("user-info").innerText = "Error: Failed to retrieve tokens!";
-        return;
-      }
-
-      // Fetch user information
-      const userInfo = await fetchUserInfo(tokens.access_token);
-      if (!userInfo) {
-        document.getElementById("user-info").innerText = "Error: Failed to fetch user info!";
-        return;
-      }
-
-      // Display user avatar and name
-      document.getElementById("user-info").innerHTML = `
-        <img src="${userInfo.avatarUrl}" alt="${userInfo.name}'s Avatar">
-        <span>${userInfo.name}</span>
-      `;
-    }
-
-    // Call the function to load and display user info
-    displayUserInfo();
   </script>
 </body>
 </html>

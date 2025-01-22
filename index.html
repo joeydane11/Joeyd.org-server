@@ -3,14 +3,49 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Joey's Dashboard Login</title>
+  <title>Roblox OAuth App</title>
+  <script>
+    const clientId = "2735003774133898988"; // Replace with your Client ID
+    const redirectUri = "dashb.html"; // Replace with your redirect URI
+
+    function login() {
+      const authUrl = `https://www.roblox.com/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(
+        redirectUri
+      )}&scope=identify`;
+
+      window.location.href = authUrl;
+    }
+  </script>
 </head>
 <body>
-  <h1>Welcome to Joey's Dashboard</h1>
-  <button id="login-btn">
-    <a href="https://auth.roblox.com/oauth/authorize?client_id=2735003774133898988&response_type=token&redirect_uri=https://joeyd.org/dashb.html&scope=read">
-      Login with Roblox
-    </a>
-  </button>
+  <h1>Welcome to the Roblox OAuth App</h1>
+  <p>Click the button below to log in with your Roblox account:</p>
+  <button onclick="login()">Login with Roblox</button>
+
+  <!-- Redirect script (for dashb.html) -->
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const authCode = urlParams.get("code");
+
+    if (authCode) {
+      // Send the authorization code to your backend for token exchange
+      fetch("https://your-backend-server.com/oauth/token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ code: authCode }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          console.log("User info:", data);
+          // Show user information on the dashboard
+          document.body.innerHTML = `<h1>Welcome, ${data.username}</h1>`;
+        })
+        .catch((error) => {
+          console.error("Error fetching token:", error);
+        });
+    }
+  </script>
 </body>
 </html>

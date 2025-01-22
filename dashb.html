@@ -4,63 +4,59 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard</title>
+  <script>
+    async function fetchUserInfo(accessToken) {
+      try {
+        // Fetch user info from Roblox API using the access token
+        const response = await fetch("https://apis.roblox.com/v1/users/authenticated", {
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          document.getElementById("username").innerText = data.name;
+          document.getElementById("avatar").src = `https://www.roblox.com/headshot-thumbnail/image?userId=${data.id}&width=150&height=150&format=png`;
+          document.getElementById("user-info").style.display = "block";
+        } else {
+          console.error("Failed to fetch user info. Please try again.");
+        }
+      } catch (error) {
+        console.error("Error fetching user info:", error);
+      }
+    }
+
+    window.onload = function () {
+      const urlParams = new URLSearchParams(window.location.hash.substring(1)); // Use hash params for token
+      const accessToken = urlParams.get("access_token");
+
+      if (accessToken) {
+        fetchUserInfo(accessToken);
+      } else {
+        alert("No access token found. Please log in again.");
+        window.location.href = "index.html";
+      }
+    };
+  </script>
+  <style>
+    #user-info {
+      display: none;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+    }
+
+    #user-info img {
+      border-radius: 50%;
+    }
+  </style>
 </head>
 <body>
-  <div id="userInfo">
-    <p>Loading user data...</p>
+  <h1>Welcome to the Dashboard</h1>
+  <div id="user-info">
+    <span id="username"></span>
+    <img id="avatar" alt="Avatar" />
   </div>
-
-  <script>
-    const CLIENT_ID = "6325271009758156790";
-    const REDIRECT_URI = "http://joeyd.org/dashb.html";
-
-    // Extract the authorization code from the URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const authorizationCode = urlParams.get("code");
-
-    if (authorizationCode) {
-      // Exchange the authorization code for an access token
-      fetch("https://apis.roblox.com/oauth/v1/token", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          grant_type: "authorization_code",
-          code: authorizationCode,
-          redirect_uri: REDIRECT_URI,
-          client_id: CLIENT_ID,
-          client_secret: "YOUR_CLIENT_SECRET", // Replace with your client secret
-        }),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          const accessToken = data.access_token;
-
-          // Fetch user info using the access token
-          return fetch("https://apis.roblox.com/oauth/v1/userinfo", {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          });
-        })
-        .then((response) => response.json())
-        .then((userInfo) => {
-          // Display the user's username and avatar
-          document.getElementById("userInfo").innerHTML = `
-            <div style="position: fixed; top: 10px; right: 10px;">
-              <img src="https://www.roblox.com/headshot-thumbnail/image?userId=${userInfo.sub}&width=100&height=100&format=png" alt="Avatar">
-              <p>${userInfo.username}</p>
-            </div>
-          `;
-        })
-        .catch((error) => {
-          console.error("Error fetching user data:", error);
-          document.getElementById("userInfo").textContent = "Failed to load user data.";
-        });
-    } else {
-      document.getElementById("userInfo").textContent = "No authorization code found.";
-    }
-  </script>
 </body>
 </html>

@@ -3,20 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Roblox OAuth Integration</title>
+  <title>Joey's Dashboard Login</title>
 </head>
 <body>
-  <h1>Welcome to JoeyD.org</h1>
-  <button id="loginButton">Login with Roblox</button>
-
-  <script>
-    const CLIENT_ID = "6325271009758156790";
-    const REDIRECT_URI = "http://joeyd.org/dashb.html";
-
-    document.getElementById("loginButton").addEventListener("click", () => {
-      const oauthUrl = `https://apis.roblox.com/oauth/v1/authorize?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=openid%20profile`;
-      window.location.href = oauthUrl;
-    });
-  </script>
+  <h1>Welcome to Joey's Dashboard</h1>
+  <button id="login-btn">
+    <a href="https://auth.roblox.com/oauth/authorize?client_id=2735003774133898988&response_type=token&redirect_uri=https://joeyd.org/dashb.html&scope=read">
+      Login with Roblox
+    </a>
+  </button>
 </body>
 </html>

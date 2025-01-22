@@ -1,52 +1,81 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Roblox OAuth Login</title>
-  <script>
-    // Generate a random string for the code verifier
-    function generateRandomString(length) {
-      const array = new Uint8Array(length);
-      window.crypto.getRandomValues(array);
-      return Array.from(array, (byte) => byte.toString(16).padStart(2, '0')).join('');
-    }
-
-    // Base64 URL encode a string
-    function base64URLEncode(str) {
-      return btoa(String.fromCharCode(...new Uint8Array(str)))
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
-    }
-
-    // Generate a code verifier and code challenge
-    async function generateCodeChallenge() {
-      const codeVerifier = generateRandomString(64);
-      const encoder = new TextEncoder();
-      const data = encoder.encode(codeVerifier);
-      const digest = await crypto.subtle.digest('SHA-256', data);
-      const codeChallenge = base64URLEncode(digest);
-
-      sessionStorage.setItem('code_verifier', codeVerifier);
-      return codeChallenge;
-    }
-
-    async function redirectToRobloxAuth() {
-      const clientId = '2735003774133898988'; // Your Client ID
-      const redirectUri = 'http://localhost:3000/dashb.html'; // Your Redirect URI
-      const codeChallenge = await generateCodeChallenge();
-      const authUrl = `https://apis.roblox.com/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(
-        redirectUri
-      )}&scope=openid&code_challenge=${codeChallenge}&code_challenge_method=S256`;
-
-      window.location.href = authUrl;
-    }
-  </script>
+    <title>Sign-Up / Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .form-container {
+            max-width: 400px;
+            margin: auto;
+        }
+        .hidden {
+            display: none;
+        }
+        .form-header {
+            display: flex;
+            justify-content: space-between;
+        }
+        button {
+            margin-top: 10px;
+            width: 100%;
+        }
+    </style>
 </head>
 <body>
-  <h1>Roblox OAuth App</h1>
-  <p>Click the button below to log in with your Roblox account:</p>
-  <button onclick="redirectToRobloxAuth()">Login with Roblox</button>
+    <div class="form-container">
+        <div class="form-header">
+            <button onclick="showForm('signup')">Sign-Up</button>
+            <button onclick="showForm('login')">Login</button>
+        </div>
+        <div id="signup-form" class="form-content">
+            <h2>Sign-Up</h2>
+            <form id="form-signup">
+                <input type="text" name="username" placeholder="Username" required /><br />
+                <input type="password" name="password" placeholder="Password" required /><br />
+                <input type="email" name="email" placeholder="Email" required /><br />
+                <button type="submit">Sign Up</button>
+            </form>
+        </div>
+        <div id="login-form" class="form-content hidden">
+            <h2>Login</h2>
+            <form id="form-login">
+                <input type="text" name="username" placeholder="Username" required /><br />
+                <input type="password" name="password" placeholder="Password" required /><br />
+                <button type="submit">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function showForm(type) {
+            document.getElementById('signup-form').classList.toggle('hidden', type !== 'signup');
+            document.getElementById('login-form').classList.toggle('hidden', type !== 'login');
+        }
+
+        document.getElementById('form-signup').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const response = await fetch('/signup', {
+                method: 'POST',
+                body: JSON.stringify(Object.fromEntries(formData)),
+                headers: { 'Content-Type': 'application/json' },
+            });
+            alert(await response.text());
+        });
+
+        document.getElementById('form-login').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const response = await fetch('/login', {
+                method: 'POST',
+                body: JSON.stringify(Object.fromEntries(formData)),
+                headers: { 'Content-Type': 'application/json' },
+            });
+            alert(await response.text());
+        });
+    </script>
 </body>
 </html>

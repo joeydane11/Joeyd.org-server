@@ -22,77 +22,85 @@
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     }
   </style>
-  <script>
-    const clientId = "2735003774133898988"; // Replace with your Client ID
-    const clientSecret = "RBX-cCLx2NguQU6SHaHpD_aTL2T6Tgxfc26yRMWhwBqcS_Z1aJKi3KC5fzPEDK3roN_e"; // Replace with your Client Secret
-    const redirectUri = "https://joeyd.org/dashb.html";
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const authCode = urlParams.get("code");
-
-    if (authCode) {
-      // Exchange the authorization code for an access token
-      fetch("https://apis.roblox.com/oauth/token", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          client_id: clientId,
-          client_secret: clientSecret,
-          grant_type: "authorization_code",
-          redirect_uri: redirectUri,
-          code: authCode,
-        }),
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error("Failed to exchange token");
-          }
-          return response.json();
-        })
-        .then((data) => {
-          const accessToken = data.access_token;
-
-          // Fetch user info using the access token
-          return fetch("https://apis.roblox.com/users/v1/me", {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          });
-        })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error("Failed to fetch user info");
-          }
-          return response.json();
-        })
-        .then((userInfo) => {
-          // Display user information
-          document.querySelector(".user-info").innerHTML = `
-            <h2>Welcome, ${userInfo.username}</h2>
-            <p><strong>User ID:</strong> ${userInfo.id}</p>
-            <p><strong>Email:</strong> ${userInfo.email || "Not provided"}</p>
-            <p><strong>Account Created:</strong> ${new Date(
-              userInfo.createdAt
-            ).toLocaleDateString()}</p>
-          `;
-        })
-        .catch((error) => {
-          console.error("Error:", error);
-          document.querySelector(".user-info").innerHTML =
-            "<p>Failed to load user information. Please try again.</p>";
-        });
-    } else {
-      document.querySelector(".user-info").innerHTML =
-        "<p>Authorization code not found. Please log in again.</p>";
-    }
-  </script>
 </head>
 <body>
   <h1>User Dashboard</h1>
   <div class="user-info">
     <p>Loading your information...</p>
   </div>
+
+  <script>
+    async function fetchAccessToken(code, codeVerifier) {
+      const clientId = '2735003774133898988'; // Your Client ID
+      const redirectUri = 'http://localhost:3000/dashb.html'; // Your Redirect URI
+
+      const tokenUrl = 'https://apis.roblox.com/oauth/token';
+      const body = new URLSearchParams({
+        grant_type: 'authorization_code',
+        code: code,
+        redirect_uri: redirectUri,
+        client_id: clientId,
+        code_verifier: codeVerifier,
+      });
+
+      const response = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: body.toString(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to exchange token');
+      }
+
+      return response.json();
+    }
+
+    async function fetchUserInfo(accessToken) {
+      const userInfoUrl = 'https://apis.roblox.com/v1/users/me';
+
+      const response = await fetch(userInfoUrl, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch user info');
+      }
+
+      return response.json();
+    }
+
+    async function handleAuthorization() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+
+      if (!code) {
+        document.querySelector('.user-info').innerHTML = '<p>Authorization code not found. Please log in again.</p>';
+        return;
+      }
+
+      const codeVerifier = sessionStorage.getItem('code_verifier');
+
+      try {
+        const tokenData = await fetchAccessToken(code, codeVerifier);
+        const userInfo = await fetchUserInfo(tokenData.access_token);
+
+        document.querySelector('.user-info').innerHTML = `
+          <h2>Welcome, ${userInfo.displayName || userInfo.username}</h2>
+          <p><strong>User ID:</strong> ${userInfo.id}</p>
+          <p><strong>Username:</strong> ${userInfo.username}</p>
+        `;
+      } catch (error) {
+        console.error('Error:', error);
+        document.querySelector('.user-info').innerHTML = '<p>Failed to load user information. Please try again.</p>';
+      }
+    }
+
+    handleAuthorization();
+  </script>
 </body>
 </html>
